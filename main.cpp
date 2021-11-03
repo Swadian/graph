@@ -5,16 +5,18 @@
 #include <algorithm>
 using namespace std;
 
-    bool compare(pair<int,int> v1,pair<int,int> v2)
-    {
-        return v1.second>v2.second;
-    }
+
 
 class graph{
 int n,m;
 vector<vector<int>> arcs;
 void sort_dfs(int start,vector<bool> &viz,queue<int> &coada);
-
+vector< vector<int> > C;//ctc-urile
+vector<int> idx,lowlink;//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
+vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
+stack <int> S;//stiva pt Tarjan
+int index;
+void tarjan(int n);
 public:
     graph(int n,int m,vector< vector<int>> arcs);
     void bfs(int start);
@@ -139,10 +141,59 @@ graph graph::Havel_Hakimi(vector<int> s)
 }
 void graph::comp_tare_conexe()
 {
-    int s=0;
+    lowlink.resize(n);//initializam marimea lui lowlink
+    idx.assign(n, -1);
+    in_stack.assign(n, 0);
+    //initializam idx si in_stack cu valorile de inceput
+    for (int i = 0; i < n; ++ i)
+        if (idx[i] == -1)
+            tarjan(i);//apelam pentru fiecare nod nevizitat
+
+    ofstream fout("ctc.out");
+    fout<<(int)C.size()<<'\n';//numarul de linii din C este numarul de ctc
+    for(int i=0;i<(int)C.size();i++)
+    {
+        for(int j=0;j<(int)C[i].size();j++)
+            fout<<C[i][j]+1<<' ';
+        fout<<'\n';
+    }//afisez fiecare componenta in parte
+    fout.close();
+}
+void graph::tarjan(int n)
+{
+    idx[n] = lowlink[n] = index;
+    //setez indexul nodului, initializez lowlink-ul cu propria valoare
+    index ++;
+
+    S.push(n);
+    in_stack[n] = true;
+    //pun nodul curent in stiva si marchez asta
+    vector <int>::const_iterator it;
+    for (it = arcs[n].begin(); it != arcs[n].end(); ++ it)//parcurg toti vecinii nodului curent
+    {
+        if (idx[*it] == -1)//daca nu a mai fost vizitat
+            {
+                tarjan(*it);//apelez recursiv
+                lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
+            }
+        else if (in_stack[*it])//daca e deja in stiva
+            lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
+    }
+    if (idx[n] == lowlink[n])//daca este nodul cu cel mai mic index din ctc
+        {
+        vector<int> con;//ctc curenta
+        int node;
+        do {
+            node = S.top();
+            con.push_back(node);
+            S.pop();
+            in_stack[node] = false;
+        }
+        while (node != n);//dump la stiva in ctc curenta
+        C.push_back(con);//pun ctc curenta in matricea de output
+    }
 
 }
-
 void bfs_main()
 {
     int n,m,s;
@@ -196,7 +247,7 @@ void sort_top_main()
     graph g(n,m,arce);
     g.sortare_top();
 }
-int main()
+void ctc_main()
 {
     int n,m;
     ifstream fin("ctc.in");
@@ -211,5 +262,10 @@ int main()
     }
     graph g(n,m,arce);
     g.comp_tare_conexe();
+
+}
+int main()
+{
+    ctc_main();
     return 0;
 }
