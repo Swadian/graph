@@ -17,7 +17,10 @@ vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
 stack <int> S;//stiva pt Tarjan
 int index;
 void tarjan(int n);
+void critical_arcs_dfs(int n,ostream &fout);
 public:
+    void print();
+    graph(){this->n=0;this->m=0;}
     graph(int n,int m,vector< vector<int>> arcs);
     void bfs(int start);
     void dfs(int start,vector<bool> &viz);
@@ -25,8 +28,18 @@ public:
     void sortare_top();
     graph Havel_Hakimi(vector<int> s);
     void comp_tare_conexe();
+    void critical_arcs();
 };
-
+void graph::print()
+{
+    ofstream fout("graph.out");
+    vector <int>::const_iterator it;
+    for(int i=0;i<n;i++)
+    {
+        for (it = arcs[i].begin(); it != arcs[i].end(); ++ it)
+                fout<<i<<' '<<*it<<'\n';
+    }
+}
 graph::graph(int n,int m,vector< vector<int>> arcs)
 {
     this->n=n;
@@ -118,26 +131,28 @@ graph graph::Havel_Hakimi(vector<int> s)
     m=0;
     n=s.size();
     vector<vector<int>> arcs;
+    arcs.resize(n);
     vector<pair<int,int>> v;
     for(int i=0;i<n;i++)
         v.push_back(make_pair(i,s[i]));//first - indicele second - gradul
-    sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second<v2.second;});//sortez dupa grade, in ordine inversa
+    sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second>v2.second;});//sortez dupa grade, in ordine inversa
     bool done=false;
     while(!done)
     {
         if(v[0].second>0)
-        for(int i=1;i<v[0].second;i++)//de la urmatorul, pana epuizam gradul nodului de pe pozitia 0
+        {
+        for(int i=1;i<=v[0].second;i++)//de la urmatorul, pana epuizam gradul nodului de pe pozitia 0
             {
                 m++;
                 arcs[v[0].first].push_back(v[i].first);//pun arc intre noduri
                 v[i].second--;//scad gradul si nodului pus
             }
+        }
         else done=true;
         v[0].second=0;
-        sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second<v2.second;});//sortez dupa grade, in ordine inversa
+        sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second>v2.second;});//sortez dupa grade, in ordine inversa
     }
     return graph(n,m,arcs);
-    //NOT TESTED
 }
 void graph::comp_tare_conexe()
 {
@@ -179,7 +194,7 @@ void graph::tarjan(int n)
         else if (in_stack[*it])//daca e deja in stiva
             lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
     }
-    if (idx[n] == lowlink[n])//daca este nodul cu cel mai mic index din ctc
+    if (idx[n] == lowlink[n])//daca si-a pastrat lowlink-ul dupa parcurgere nu mai avem unde merge si afisam
         {
         vector<int> con;//ctc curenta
         int node;
@@ -193,6 +208,42 @@ void graph::tarjan(int n)
         C.push_back(con);//pun ctc curenta in matricea de output
     }
 
+}
+void graph::critical_arcs_dfs(int n,ostream &fout)
+{
+    idx[n] = lowlink[n] = index;
+    //setez indexul nodului, initializez lowlink-ul cu propria valoare
+    index ++;
+
+    S.push(n);
+    in_stack[n] = true;
+    //pun nodul curent in stiva si marchez asta
+    vector <int>::const_iterator it;
+    for (it = arcs[n].begin(); it != arcs[n].end(); ++ it)//parcurg toti vecinii nodului curent
+    {
+        if (idx[*it] == -1)//daca nu a mai fost vizitat
+            {
+                critical_arcs_dfs(*it,fout);//apelez recursiv
+                lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
+            }
+        else if (in_stack[*it])//daca e deja in stiva
+            lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
+
+        if(lowlink[*it]>idx[n]) fout<<n<<' '<<*it;
+    }
+
+}
+void graph::critical_arcs()
+{
+    ofstream fout("crit_conn.out");
+    lowlink.resize(n);//initializam marimea lui lowlink
+    idx.assign(n, -1);
+    in_stack.assign(n, 0);
+    //initializam idx si in_stack cu valorile de inceput
+    for (int i = 0; i < n; ++ i)
+        if (idx[i] == -1)
+            critical_arcs_dfs(i,fout);//apelam pentru fiecare nod nevizitat
+    fout.close();
 }
 void bfs_main()
 {
@@ -264,8 +315,38 @@ void ctc_main()
     g.comp_tare_conexe();
 
 }
+void arce_critice_main()
+{
+    int n,m;
+    ifstream fin("crit_conn.in");
+    fin>>n>>m;
+    vector<vector<int>> arce(n);
+    int a,b;
+    for(int i=0;i<m;i++)
+    {
+        fin>>a>>b;
+        //a--;b--;
+        arce[a].push_back(b);
+    }
+    graph g(n,m,arce);
+    g.critical_arcs();
+
+}
+void havel_hakimi_main()
+{
+    int n;
+    vector<int> s;
+    ifstream fin("HavHak.in");
+    fin>>n;
+    int l;
+    for(int i=0;i<n;i++)
+        {fin>>l;s.push_back(l);}
+    graph g;
+    g=g.Havel_Hakimi(s);
+    g.print();
+
+}
 int main()
 {
-    ctc_main();
     return 0;
 }
