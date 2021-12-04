@@ -39,6 +39,8 @@ public:
     bool get_negative_cycle(){return this->negative_cycle;}
     vector<int> dijkstra();
     vector<vector<int> > apm();
+    void print_distance_matrix(string filename);
+    void roy_floyd();
 };
 void graph::print()
 {
@@ -303,6 +305,29 @@ void graph::disjoint_command(ifstream &fin,ofstream &fout,vector<int> &tati,vect
             fout<<"DA\n";
         else fout<<"NU\n";
     else unite(root(x,tati,rang),root(y,tati,rang),tati,rang);//reunim multimile
+}
+void graph::print_distance_matrix(string filename)
+{
+    ofstream fout(filename);
+    vector < pair<int,int> >::const_iterator it;
+    for(int i=0;i<n;i++)
+    {
+        for (it = cost_arcs[i].begin(); it != cost_arcs[i].end(); ++ it)
+                fout<<(*it).second<<' ';
+        fout<<'\n';
+    }
+    fout.close();
+}
+void graph::roy_floyd()
+{
+    for(int k=0;k<n;k++)
+        for(int i=0;i<n;i++)
+            for(int j=0;j<n;j++)
+                if (cost_arcs[i][k].second && cost_arcs[k][j].second
+                    && (cost_arcs[i][j].second > cost_arcs[i][k].second + cost_arcs[k][j].second
+                        || !(cost_arcs[i][j].second)) && i != j)
+                        cost_arcs[i][j] = make_pair(j,cost_arcs[i][k].second + cost_arcs[k][j].second);
+
 }
 vector<int> graph::bellman_ford()
 {
@@ -596,8 +621,32 @@ void apm_main()
     fout.close();
 
 }
+void roy_floyd_main()
+{
+    int n;
+    ifstream fin("royfloyd.in");
+    fin>>n;
+        vector<vector<pair<int,int> > > cost_arcs(n);
+    vector<vector<int> > arcs(n);
+
+    int c;
+    for(int x=0;x<n;x++)
+    {
+        for(int y=0;y<n;y++)
+        {
+            fin>>c;
+            arcs[x].push_back(y);
+            cost_arcs[x].push_back(make_pair(y,c));
+
+        }
+    }
+    graph g(n,n,arcs,cost_arcs);
+    g.roy_floyd();
+    g.print_distance_matrix("royfloyd.out");
+    fin.close();
+}
 int main()
 {
-    apm_main();
+    roy_floyd_main();
     return 0;
 }
