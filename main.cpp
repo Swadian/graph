@@ -41,6 +41,7 @@ public:
     vector<vector<int> > apm();
     void print_distance_matrix(string filename);
     void roy_floyd();
+    int d_arb();
 };
 void graph::print()
 {
@@ -434,6 +435,49 @@ vector< vector<int> > graph::apm()
     }
     return apm;
 }
+int graph::d_arb()
+{
+    queue<int> que;
+    que.push(0);
+    vector<int> dist;
+    dist.assign(n,-1);
+    int end_of_chain=0;
+    int max_chain_length=0;
+    dist[0]=0;
+    while(!que.empty())
+    {
+        int current=que.front();//iau elementul curent
+        que.pop();//il scot din coada
+        for(unsigned int i=0;i<arcs[current].size();i++)//ii parcurg lista de vecini
+        {
+            if(dist[arcs[current][i]]==-1)//daca vecinul e nevizitat
+            {
+                dist[arcs[current][i]]=dist[current]+1;//distanta lui devine cea a tatalui +1
+                que.push(arcs[current][i]);//il pun in coada
+            }
+        }
+        end_of_chain=current;
+    }
+    dist.assign(n,-1);
+    dist[end_of_chain]=0;
+    que.push(end_of_chain);
+    while(!que.empty())
+    {
+        int current=que.front();//iau elementul curent
+        que.pop();//il scot din coada
+        for(unsigned int i=0;i<arcs[current].size();i++)//ii parcurg lista de vecini
+        {
+            if(dist[arcs[current][i]]==-1)//daca vecinul e nevizitat
+            {
+                dist[arcs[current][i]]=dist[current]+1;//distanta lui devine cea a tatalui +1
+                que.push(arcs[current][i]);//il pun in coada
+                max_chain_length=max(max_chain_length,dist[current]+1);
+            }
+        }
+    }
+    return max_chain_length+1;
+
+}
 void bfs_main()
 {
     int n,m,s;
@@ -645,8 +689,26 @@ void roy_floyd_main()
     g.print_distance_matrix("royfloyd.out");
     fin.close();
 }
+void darb_main()
+{
+    int n;
+    ifstream fin("darb.in");
+    ofstream fout("darb.out");
+    fin>>n;
+    vector<vector<int>> arce(n);
+    int a,b;
+    for(int i=0;i<n-1;i++)
+    {
+        fin>>a>>b;
+        a--;b--;
+        arce[a].push_back(b);
+        arce[b].push_back(a);
+    }
+    graph g(n,n-1,arce);
+    fout<<g.d_arb();
+}
 int main()
 {
-    roy_floyd_main();
+    darb_main();
     return 0;
 }
