@@ -20,6 +20,7 @@ void unite(int x,int y,vector<int> &tati,vector<int> &rang);
 bool negative_cycle=false;
 int apm_cost=0;
 int apm_size=0;
+int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
 public:
     int get_apm_cost(){return this->apm_cost;}
     int get_apm_size(){return this->apm_size;}
@@ -42,6 +43,7 @@ public:
     void print_distance_matrix(string filename);
     void roy_floyd();
     int d_arb();
+    int max_flow();
 };
 void graph::print()
 {
@@ -478,6 +480,70 @@ int graph::d_arb()
     return max_chain_length+1;
 
 }
+
+int graph::flow_BF(vector<int> &tati,vector<int> &cd,vector<int> &viz,vector< vector<int> > &capacities,vector< vector<int> > &flows)
+{
+    int nod,V;
+    cd[0]=cd[1]=0;
+    viz.assign(n,0);
+    viz[0]=1;
+    for (int i = 0; i <= cd[0]; i++)
+	{
+		nod = cd[i];
+        if (nod == n-1)continue;//daca s-a ajuns la destinatie
+        for (int j = 0; j < (int)arcs[nod].size(); j++)
+			{
+				V = arcs[nod][j];
+				if (capacities[nod][V] == flows[nod][V] || viz[V])continue;//daca a mai fost vizitat sau nu mai are capacitate
+				viz[V] = 1;
+				cd[ ++cd[0] ] = V;
+				tati[V] = nod;
+			}
+	}
+
+    return viz[n-1];//daca s-a ajuns la destinatie
+}
+int graph::max_flow()
+{
+    const int INF = 0x3f3f3f3f;
+    vector<int> cd,viz,tati;
+    cd.assign(n,0);
+    viz.assign(n,0);
+    tati.assign(n,0);
+    vector< vector<int> > capacities(n),flows(n);
+    for(auto it=capacities.begin();it!=capacities.end();it++)
+        (*it).assign(n,0);
+    for(auto it=flows.begin();it!=flows.end();it++)
+        (*it).assign(n,0);
+    for(int i=0;i<n;i++)
+        for(auto it=cost_arcs[i].begin();it!=cost_arcs[i].end();it++)
+            capacities[i][(*it).first]=(*it).second;
+    //initializez matricea de capacitati din lista de muchii
+    int flow=0,fmin,nod;
+    //initializari
+    while (flow_BF(tati,viz,cd,capacities,flows))//cat timp exista un drum catre destinatie
+		for (auto it = arcs[n-1].begin(); it!=arcs[n-1].end();it++)//verific nodurile ce intra in destinatie
+		{
+			nod = (*it);
+			if (flows[nod][n] == capacities[nod][n] || !viz[nod]) continue;//daca nodul e saturat
+			tati[n-1] = nod;//consider nodul curent pe post de tata al destinatiei
+
+			fmin = INF;
+			for (nod = n-1; nod != 0; nod = tati[nod])
+				fmin = min(fmin, capacities[ tati[nod] ][nod] - flows[ tati[nod] ][nod]);//gasesc bottleneck-ul
+			if (fmin == 0) continue;
+
+			for (nod = n-1; nod != 0; nod = tati[nod])
+			{
+				flows[ tati[nod] ][nod] += fmin;
+				flows[nod][ tati[nod] ] -= fmin;
+			}//updatez cantitatile trimise pe drumul gasit
+
+			flow += fmin;
+		}
+
+    return flow;
+}
 void bfs_main()
 {
     int n,m,s;
@@ -641,7 +707,7 @@ void dijkstra_main()
 }
 void apm_main()
 {
-        int n,m;
+    int n,m;
     ifstream fin("apm.in");
     ofstream fout("apm.out");
     fin>>n>>m;
@@ -707,8 +773,31 @@ void darb_main()
     graph g(n,n-1,arce);
     fout<<g.d_arb();
 }
+void maxflow_main()
+{
+    int n,m;
+    ifstream fin("maxflow.in");
+    ofstream fout("maxflow.out");
+    fin>>n>>m;
+    vector<vector<pair<int,int> > > cost_arcs(n);
+    vector< vector<int>> arcs(n);
+    int x,y,c;
+    for(int i=0;i<m;i++)
+    {
+        fin>>x>>y>>c;
+        x--;
+        y--;
+        cost_arcs[x].push_back(make_pair(y,c));
+        arcs[x].push_back(y);
+        arcs[y].push_back(x);
+    }
+    graph g(n,m,arcs,cost_arcs);
+    fout<<g.max_flow();
+    fin.close();
+    fout.close();
+}
 int main()
 {
-    darb_main();
+    maxflow_main();
     return 0;
 }
