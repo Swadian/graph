@@ -44,6 +44,8 @@ public:
     void roy_floyd();
     int d_arb();
     int max_flow();
+    bool has_euler_cycle();
+    vector<int> euler_cycle();
 };
 void graph::print()
 {
@@ -544,6 +546,54 @@ int graph::max_flow()
 
     return flow;
 }
+
+bool graph::has_euler_cycle()
+{
+    for(int i=0;i<n;i++)
+        if((int)arcs[i].size()%2==1)
+            return false;
+    return true;
+}
+vector<int> graph::euler_cycle()
+{
+    vector<int> cycle;
+    stack<int> st;
+    st.push(0);
+    vector< vector<int> > node_edges(n);
+    vector<pair<int,int> > edges;
+    int k=0;
+    for(int i=0;i<n;i++)
+        for(int j=0;j<(int)arcs[i].size();j++)
+        {
+            edges.push_back(make_pair(i,arcs[i][j]));
+            node_edges[i].push_back(k);
+            node_edges[arcs[i][j]].push_back(k++);
+        }
+    vector<bool> used_edge;
+    used_edge.assign(k,false);
+    int nod;
+    while(!st.empty())
+    {
+        nod=st.top();
+        if(!node_edges[nod].empty())
+        {
+            int e=node_edges[nod].back();
+            node_edges[nod].pop_back();
+            if(!used_edge[e])
+            {
+                used_edge[e]=true;
+                st.push(edges[e].first ^ edges[e].second ^ nod);
+            }
+        }
+        else{
+        st.pop();
+        cycle.push_back(nod);
+        }
+    }
+
+    return cycle;
+}
+
 void bfs_main()
 {
     int n,m,s;
@@ -796,8 +846,34 @@ void maxflow_main()
     fin.close();
     fout.close();
 }
+void euler_main()
+{
+    ifstream fin("ciclueuler.in");
+    ofstream fout("ciclueuler.out");
+    int n, m, x, y;
+    fin >> n >> m;
+    vector<vector<int>> arcs(n);
+    for(int i=0;i<m;i++)
+    {
+        fin>>x>>y;
+        x--;
+        y--;
+        arcs[x].push_back(y);
+    }
+    graph g(n,m,arcs);
+    if(!g.has_euler_cycle())
+        fout<<"-1\n";
+    else
+    {
+        vector<int> out = g.euler_cycle();
+        for(auto it=out.begin();it!=out.end()-1;it++)
+            fout<<*it+1<<' ';
+    }
+    fin.close();
+    fout.close();
+}
 int main()
 {
-    maxflow_main();
+    euler_main();
     return 0;
 }
