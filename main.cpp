@@ -13,22 +13,28 @@ class graph
     int n,m;
     vector<vector<int>> arcs;
     vector<vector<pair<int,int> > > cost_arcs;//first-destination, second-cost
+    int apm_cost=0;
+    int apm_size=0;
+    bool negative_cycle=false;
+
     void sort_dfs(int start,vector<bool> &viz,queue<int> &coada);
     void tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
     void critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
     int root(int x,vector<int> &tati,vector<int> &rang);
     void unite(int x,int y,vector<int> &tati,vector<int> &rang);
-    bool negative_cycle=false;
-    int apm_cost=0;
-    int apm_size=0;
     int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
+
 public:
-    int get_apm_cost(){return this->apm_cost;}
-    int get_apm_size(){return this->apm_size;}
-    void print();
     graph(){this->n=0;this->m=0;}
     graph(int n,int m,vector< vector<int>> arcs,vector<vector<pair<int,int> > > cost_arcs);
     graph(int n,int m,vector< vector<int>> arcs);
+
+    int get_apm_cost(){return this->apm_cost;}
+    int get_apm_size(){return this->apm_size;}
+    bool get_negative_cycle(){return this->negative_cycle;}
+
+    void print();
+
     void bfs(int start);
     void dfs(int start,vector<bool> &viz);//transforma vectorul dat intr-un vector de vizitari cu DFS din nodul start
     int componente_conexe();//returneaza numarul de componente conexe
@@ -36,13 +42,13 @@ public:
     graph Havel_Hakimi(vector<int> s);//returneaza un graf generat din vectorul de grade s
     void comp_tare_conexe();
     void critical_arcs();
+
     void disjoint_command(ifstream &fin,ofstream &fout,vector<int> &tati,vector<int> &rang);
     vector<int> bellman_ford();//actualizeaza verificarea daca are sau nu ciclu negativ si returneaza distantele de la nodul 0 la toate nodurile
-    bool get_negative_cycle(){return this->negative_cycle;}
     vector<int> dijkstra();//returneaza distanta de la nodul 0 la celelalte noduri
     vector<vector<int> > apm();//returneaza APM-ul grafului
     void print_distance_matrix(string filename);//afiseaza matricea distantelor dintre toate nodurile in fisierul dat
-    void roy_floyd();
+    void roy_floyd();//optimizeaza toate costurile dintre noduri
     int d_arb();//returneaza diametrul arborelui (distanta cea mai mare intre doua frunze)
     int max_flow();//returneaza fluxul maxim din graf de la nodul 0 la n-1
     //doesn't work on IA
@@ -407,6 +413,7 @@ vector<int> graph::dijkstra()
             }
         }
     }
+
     for(vector<int>::iterator i=dist.begin()+1; i!=dist.end(); i++)
         if(*i==INF)
             *i=0;
