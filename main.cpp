@@ -8,19 +8,20 @@ using namespace std;
 
 
 
-class graph{
-int n,m;
-vector<vector<int>> arcs;
-vector<vector<pair<int,int> > > cost_arcs;//first-destination, second-cost
-void sort_dfs(int start,vector<bool> &viz,queue<int> &coada);
-void tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
-void critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
-int root(int x,vector<int> &tati,vector<int> &rang);
-void unite(int x,int y,vector<int> &tati,vector<int> &rang);
-bool negative_cycle=false;
-int apm_cost=0;
-int apm_size=0;
-int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
+class graph
+{
+    int n,m;
+    vector<vector<int>> arcs;
+    vector<vector<pair<int,int> > > cost_arcs;//first-destination, second-cost
+    void sort_dfs(int start,vector<bool> &viz,queue<int> &coada);
+    void tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
+    void critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
+    int root(int x,vector<int> &tati,vector<int> &rang);
+    void unite(int x,int y,vector<int> &tati,vector<int> &rang);
+    bool negative_cycle=false;
+    int apm_cost=0;
+    int apm_size=0;
+    int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
 public:
     int get_apm_cost(){return this->apm_cost;}
     int get_apm_size(){return this->apm_size;}
@@ -29,32 +30,34 @@ public:
     graph(int n,int m,vector< vector<int>> arcs,vector<vector<pair<int,int> > > cost_arcs);
     graph(int n,int m,vector< vector<int>> arcs);
     void bfs(int start);
-    void dfs(int start,vector<bool> &viz);
-    void componente_conexe();
+    void dfs(int start,vector<bool> &viz);//transforma vectorul dat intr-un vector de vizitari cu DFS din nodul start
+    int componente_conexe();//returneaza numarul de componente conexe
     void sortare_top();
-    graph Havel_Hakimi(vector<int> s);
+    graph Havel_Hakimi(vector<int> s);//returneaza un graf generat din vectorul de grade s
     void comp_tare_conexe();
     void critical_arcs();
     void disjoint_command(ifstream &fin,ofstream &fout,vector<int> &tati,vector<int> &rang);
-    vector<int> bellman_ford();
+    vector<int> bellman_ford();//actualizeaza verificarea daca are sau nu ciclu negativ si returneaza distantele de la nodul 0 la toate nodurile
     bool get_negative_cycle(){return this->negative_cycle;}
-    vector<int> dijkstra();
-    vector<vector<int> > apm();
-    void print_distance_matrix(string filename);
+    vector<int> dijkstra();//returneaza distanta de la nodul 0 la celelalte noduri
+    vector<vector<int> > apm();//returneaza APM-ul grafului
+    void print_distance_matrix(string filename);//afiseaza matricea distantelor dintre toate nodurile in fisierul dat
     void roy_floyd();
-    int d_arb();
-    int max_flow();
-    bool has_euler_cycle();
-    vector<int> euler_cycle();
+    int d_arb();//returneaza diametrul arborelui (distanta cea mai mare intre doua frunze)
+    int max_flow();//returneaza fluxul maxim din graf de la nodul 0 la n-1
+    //doesn't work on IA
+    bool has_euler_cycle();//returneaza daca graful are un ciclu eulerian
+    vector<int> euler_cycle();//returneaza un ciclu eulerian din graf
+    //doesn't work on IA
 };
 void graph::print()
 {
     ofstream fout("graph.out");
     vector <int>::const_iterator it;
-    for(int i=0;i<n;i++)
+    for(int i=0; i<n; i++)
     {
         for (it = arcs[i].begin(); it != arcs[i].end(); ++ it)
-                fout<<i<<' '<<*it<<'\n';
+            fout<<i<<' '<<*it<<'\n';
     }
 }
 graph::graph(int n,int m,vector< vector<int>> arcs)
@@ -76,13 +79,13 @@ void graph::bfs(int start)
     queue<int> que;
     que.push(start);
     int *dist=new int[this->n];
-    for(int i=0;i<n;i++)dist[i]=-1;//initializez distantele cu -1
+    for(int i=0; i<n; i++)dist[i]=-1; //initializez distantele cu -1
     dist[start]=0;//distanta startului e 0
     while(!que.empty())//cat timp mai am in coada
     {
         int current=que.front();//iau elementul curent
         que.pop();//il scot din coada
-        for(unsigned int i=0;i<arcs[current].size();i++)//ii parcurg lista de vecini
+        for(unsigned int i=0; i<arcs[current].size(); i++) //ii parcurg lista de vecini
         {
             if(dist[arcs[current][i]]==-1)//daca vecinul e nevizitat
             {
@@ -92,55 +95,54 @@ void graph::bfs(int start)
         }
     }
     ofstream fout("bfs.out");
-    for(int i=0;i<this->n;i++)
+    for(int i=0; i<this->n; i++)
         fout<<dist[i]<<' ';//afisez distantele
     delete[] dist;//sterg vectorul dinamic
 }
 void graph::dfs(int start,vector<bool> &viz)
 {
     viz[start]=true;
-        for(unsigned int i=0;i<arcs[start].size();i++)//ii parcurg lista de vecini
+    for(unsigned int i=0; i<arcs[start].size(); i++) //ii parcurg lista de vecini
+    {
+        if(!viz[arcs[start][i]])//daca e nevizitat
         {
-            if(!viz[arcs[start][i]])//daca e nevizitat
-            {
-                viz[arcs[start][i]]=true;//il vizitez
-                this->dfs(arcs[start][i],viz);//apelez recursiv dfs pe el
-            }
+            viz[arcs[start][i]]=true;//il vizitez
+            this->dfs(arcs[start][i],viz);//apelez recursiv dfs pe el
         }
+    }
 }
-void graph::componente_conexe()
+int graph::componente_conexe()
 {
     vector<bool> viz(n);
-    for(int i=0;i<n;i++)viz[i]=false;//initializez cu fals vectorul
+    for(int i=0; i<n; i++)viz[i]=false; //initializez cu fals vectorul
     int componente=0;//numarul de componente conexe
-    for(int i=0;i<n;i++)//parcurg toate nodurile
+    for(int i=0; i<n; i++) //parcurg toate nodurile
         if(!viz[i])//daca nu e deja vizitat
         {
             dfs(i,viz);//incep un dfs din el
             componente++;//si am inca o componenta conexa
         }
-    ofstream fout("dfs.out");
-    fout<<componente;
+    return componente;
 
 }
 void graph::sort_dfs(int start, vector<bool> &viz,queue<int> &coada)
 {
     viz[start]=true;
-        for(unsigned int i=0;i<arcs[start].size();i++)//ii parcurg lista de vecini
+    for(unsigned int i=0; i<arcs[start].size(); i++) //ii parcurg lista de vecini
+    {
+        if(!viz[arcs[start][i]])//daca e nevizitat
         {
-            if(!viz[arcs[start][i]])//daca e nevizitat
-            {
-                viz[arcs[start][i]]=true;//il vizitez
-                this->sort_dfs(arcs[start][i],viz,coada);//apelez recursiv dfs pe el
-            }
+            viz[arcs[start][i]]=true;//il vizitez
+            this->sort_dfs(arcs[start][i],viz,coada);//apelez recursiv dfs pe el
         }
+    }
     coada.push(start);
 }
 void graph::sortare_top()
 {
     queue<int> coada;
     vector<bool> viz(n);
-    for(int i=0;i<n;i++)viz[i]=false;//initializez cu fals vectorul
+    for(int i=0; i<n; i++)viz[i]=false; //initializez cu fals vectorul
     sort_dfs(0,viz,coada);
     ofstream fout("sortaret.out");
     while(!coada.empty())
@@ -158,7 +160,7 @@ graph graph::Havel_Hakimi(vector<int> s)
     vector<vector<int>> arcs;
     arcs.resize(n);
     vector<pair<int,int>> v;
-    for(int i=0;i<n;i++)
+    for(int i=0; i<n; i++)
         v.push_back(make_pair(i,s[i]));//first - indicele second - gradul
     sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second>v2.second;});//sortez dupa grade, in ordine inversa
     bool done=false;
@@ -166,7 +168,7 @@ graph graph::Havel_Hakimi(vector<int> s)
     {
         if(v[0].second>0)
         {
-        for(int i=1;i<=v[0].second;i++)//de la urmatorul, pana epuizam gradul nodului de pe pozitia 0
+            for(int i=1; i<=v[0].second; i++) //de la urmatorul, pana epuizam gradul nodului de pe pozitia 0
             {
                 m++;
                 arcs[v[0].first].push_back(v[i].first);//pun arc intre noduri
@@ -181,10 +183,10 @@ graph graph::Havel_Hakimi(vector<int> s)
 }
 void graph::comp_tare_conexe()
 {
-vector<int> idx,lowlink;//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
-vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
-stack <int> S;//stiva pt Tarjan
-int index=0;
+    vector<int> idx,lowlink;//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
+    vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
+    stack <int> S;//stiva pt Tarjan
+    int index=0;
     vector< vector<int> > C;//ctc-urile
     lowlink.resize(n);//initializam marimea lui lowlink
     idx.assign(n, -1);
@@ -196,9 +198,9 @@ int index=0;
 
     ofstream fout("ctc.out");
     fout<<(int)C.size()<<'\n';//numarul de linii din C este numarul de ctc
-    for(int i=0;i<(int)C.size();i++)
+    for(int i=0; i<(int)C.size(); i++)
     {
-        for(int j=0;j<(int)C[i].size();j++)
+        for(int j=0; j<(int)C[i].size(); j++)
             fout<<C[i][j]+1<<' ';
         fout<<'\n';
     }//afisez fiecare componenta in parte
@@ -217,18 +219,19 @@ void graph::tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <
     for (it = arcs[n].begin(); it != arcs[n].end(); ++ it)//parcurg toti vecinii nodului curent
     {
         if (idx[*it] == -1)//daca nu a mai fost vizitat
-            {
-                tarjan(*it,C,in_stack,S,idx,lowlink,index);//apelez recursiv
-                lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
-            }
+        {
+            tarjan(*it,C,in_stack,S,idx,lowlink,index);//apelez recursiv
+            lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
+        }
         else if (in_stack[*it])//daca e deja in stiva
             lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
     }
     if (idx[n] == lowlink[n])//daca si-a pastrat lowlink-ul dupa parcurgere nu mai avem unde merge si afisam
-        {
+    {
         vector<int> con;//ctc curenta
         int node;
-        do {
+        do
+        {
             node = S.top();
             con.push_back(node);
             S.pop();
@@ -252,10 +255,10 @@ void graph::critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <
     for (it = arcs[n].begin(); it != arcs[n].end(); ++ it)//parcurg toti vecinii nodului curent
     {
         if (idx[*it] == -1)//daca nu a mai fost vizitat
-            {
-                critical_arcs_dfs(*it,fout,in_stack,S,idx,lowlink,index);//apelez recursiv
-                lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
-            }
+        {
+            critical_arcs_dfs(*it,fout,in_stack,S,idx,lowlink,index);//apelez recursiv
+            lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
+        }
         else if (in_stack[*it])//daca e deja in stiva
             lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
 
@@ -315,23 +318,23 @@ void graph::print_distance_matrix(string filename)
 {
     ofstream fout(filename);
     vector < pair<int,int> >::const_iterator it;
-    for(int i=0;i<n;i++)
+    for(int i=0; i<n; i++)
     {
         for (it = cost_arcs[i].begin(); it != cost_arcs[i].end(); ++ it)
-                fout<<(*it).second<<' ';
+            fout<<(*it).second<<' ';
         fout<<'\n';
     }
     fout.close();
 }
 void graph::roy_floyd()
 {
-    for(int k=0;k<n;k++)
-        for(int i=0;i<n;i++)
-            for(int j=0;j<n;j++)
+    for(int k=0; k<n; k++)
+        for(int i=0; i<n; i++)
+            for(int j=0; j<n; j++)
                 if (cost_arcs[i][k].second && cost_arcs[k][j].second
-                    && (cost_arcs[i][j].second > cost_arcs[i][k].second + cost_arcs[k][j].second
-                        || !(cost_arcs[i][j].second)) && i != j)
-                        cost_arcs[i][j] = make_pair(j,cost_arcs[i][k].second + cost_arcs[k][j].second);
+                        && (cost_arcs[i][j].second > cost_arcs[i][k].second + cost_arcs[k][j].second
+                            || !(cost_arcs[i][j].second)) && i != j)
+                    cost_arcs[i][j] = make_pair(j,cost_arcs[i][k].second + cost_arcs[k][j].second);
 
 }
 vector<int> graph::bellman_ford()
@@ -346,12 +349,15 @@ vector<int> graph::bellman_ford()
     in_queue.assign(n,false);
     int x;
     vector < pair <int, int> >::iterator it;
-    dist[0]=0;q.push(0);in_queue[0]=true;
+    dist[0]=0;
+    q.push(0);
+    in_queue[0]=true;
     //initializari
     while(!q.empty() && !this->negative_cycle)
     {
         x=q.front();
-        q.pop();in_queue[x]=false;
+        q.pop();
+        in_queue[x]=false;
         for (it = cost_arcs[x].begin(); it != cost_arcs[x].end(); ++ it)
             if (dist[x] < INF)
                 if(dist[it->first]>dist[x]+it->second)//daca pot optimiza cu arcul curent
@@ -363,7 +369,8 @@ vector<int> graph::bellman_ford()
                             negative_cycle=true;//exista un ciclu negativ
                         else
                         {
-                            q.push(it->first);in_queue[it->first]=true;//il pun in coada
+                            q.push(it->first);
+                            in_queue[it->first]=true;//il pun in coada
                             cnt_in_queue[it->first]++;//marchez ca a mai fost pus in coada odata
                         }
                     }
@@ -380,16 +387,19 @@ vector<int> graph::dijkstra()
     set<pair<int,int> > h;
     h.insert(make_pair(0,0));
     vector<pair<int, int>>::iterator it;
-    while(!h.empty()){
+    while(!h.empty())
+    {
         int node=h.begin()->second;
         h.erase(h.begin());
 
-        for(it=cost_arcs[node].begin();it!=cost_arcs[node].end();it++)
+        for(it=cost_arcs[node].begin(); it!=cost_arcs[node].end(); it++)
         {
             int to=it->first;
             int cost=it->second;
-            if(dist[to]>dist[node]+cost){
-                if(dist[to]!=INF){
+            if(dist[to]>dist[node]+cost)
+            {
+                if(dist[to]!=INF)
+                {
                     h.erase(h.find(make_pair(dist[to],to)));
                 }
                 dist[to]=dist[node]+cost;
@@ -397,9 +407,9 @@ vector<int> graph::dijkstra()
             }
         }
     }
-    for(vector<int>::iterator i=dist.begin()+1;i!=dist.end();i++)
+    for(vector<int>::iterator i=dist.begin()+1; i!=dist.end(); i++)
         if(*i==INF)
-        *i=0;
+            *i=0;
 
     return dist;
 }
@@ -409,15 +419,18 @@ vector< vector<int> > graph::apm()
     this->apm_size=0;
     vector<int> tati(n),rang(n);
     rang.assign(n,1);
-    for(int i=0;i<n;i++)tati[i]=i;
+    for(int i=0; i<n; i++)tati[i]=i;
     vector<vector<int> > apm(n);
 
-    struct triple{int x,y,c;};
+    struct triple
+    {
+        int x,y,c;
+    };
     vector<triple> muchii(n);
-            triple aux;
+    triple aux;
 
-    for(int i=0;i<(int)cost_arcs.size();i++)
-        for(int j=0;j<(int)cost_arcs[i].size();j++)
+    for(int i=0; i<(int)cost_arcs.size(); i++)
+        for(int j=0; j<(int)cost_arcs[i].size(); j++)
         {
             aux.x=i;
             aux.y=(cost_arcs[i])[j].first;
@@ -427,7 +440,7 @@ vector< vector<int> > graph::apm()
 
     //convertesc vectorul de vectori la un format usor sortabil
     sort(muchii.begin(),muchii.end(),[](triple v1,triple v2)->bool{return v1.c<v2.c;});
-    for(int i=0;i<(int)muchii.size();i++)
+    for(int i=0; i<(int)muchii.size(); i++)
     {
         if(root(muchii[i].x,tati,rang)!=root(muchii[i].y,tati,rang))
         {
@@ -452,7 +465,7 @@ int graph::d_arb()
     {
         int current=que.front();//iau elementul curent
         que.pop();//il scot din coada
-        for(unsigned int i=0;i<arcs[current].size();i++)//ii parcurg lista de vecini
+        for(unsigned int i=0; i<arcs[current].size(); i++) //ii parcurg lista de vecini
         {
             if(dist[arcs[current][i]]==-1)//daca vecinul e nevizitat
             {
@@ -469,7 +482,7 @@ int graph::d_arb()
     {
         int current=que.front();//iau elementul curent
         que.pop();//il scot din coada
-        for(unsigned int i=0;i<arcs[current].size();i++)//ii parcurg lista de vecini
+        for(unsigned int i=0; i<arcs[current].size(); i++) //ii parcurg lista de vecini
         {
             if(dist[arcs[current][i]]==-1)//daca vecinul e nevizitat
             {
@@ -490,18 +503,18 @@ int graph::flow_BF(vector<int> &tati,vector<int> &cd,vector<int> &viz,vector< ve
     viz.assign(n,0);
     viz[0]=1;
     for (int i = 0; i <= cd[0]; i++)
-	{
-		nod = cd[i];
+    {
+        nod = cd[i];
         if (nod == n-1)continue;//daca s-a ajuns la destinatie
         for (int j = 0; j < (int)arcs[nod].size(); j++)
-			{
-				V = arcs[nod][j];
-				if (capacities[nod][V] == flows[nod][V] || viz[V])continue;//daca a mai fost vizitat sau nu mai are capacitate
-				viz[V] = 1;
-				cd[ ++cd[0] ] = V;
-				tati[V] = nod;
-			}
-	}
+        {
+            V = arcs[nod][j];
+            if (capacities[nod][V] == flows[nod][V] || viz[V])continue;//daca a mai fost vizitat sau nu mai are capacitate
+            viz[V] = 1;
+            cd[ ++cd[0] ] = V;
+            tati[V] = nod;
+        }
+    }
 
     return viz[n-1];//daca s-a ajuns la destinatie
 }
@@ -513,43 +526,43 @@ int graph::max_flow()
     viz.assign(n,0);
     tati.assign(n,0);
     vector< vector<int> > capacities(n),flows(n);
-    for(auto it=capacities.begin();it!=capacities.end();it++)
+    for(auto it=capacities.begin(); it!=capacities.end(); it++)
         (*it).assign(n,0);
-    for(auto it=flows.begin();it!=flows.end();it++)
+    for(auto it=flows.begin(); it!=flows.end(); it++)
         (*it).assign(n,0);
-    for(int i=0;i<n;i++)
-        for(auto it=cost_arcs[i].begin();it!=cost_arcs[i].end();it++)
+    for(int i=0; i<n; i++)
+        for(auto it=cost_arcs[i].begin(); it!=cost_arcs[i].end(); it++)
             capacities[i][(*it).first]=(*it).second;
     //initializez matricea de capacitati din lista de muchii
     int flow=0,fmin,nod;
     //initializari
     while (flow_BF(tati,viz,cd,capacities,flows))//cat timp exista un drum catre destinatie
-		for (auto it = arcs[n-1].begin(); it!=arcs[n-1].end();it++)//verific nodurile ce intra in destinatie
-		{
-			nod = (*it);
-			if (flows[nod][n] == capacities[nod][n] || !viz[nod]) continue;//daca nodul e saturat
-			tati[n-1] = nod;//consider nodul curent pe post de tata al destinatiei
+        for (auto it = arcs[n-1].begin(); it!=arcs[n-1].end(); it++) //verific nodurile ce intra in destinatie
+        {
+            nod = (*it);
+            if (flows[nod][n] == capacities[nod][n] || !viz[nod]) continue;//daca nodul e saturat
+            tati[n-1] = nod;//consider nodul curent pe post de tata al destinatiei
 
-			fmin = INF;
-			for (nod = n-1; nod != 0; nod = tati[nod])
-				fmin = min(fmin, capacities[ tati[nod] ][nod] - flows[ tati[nod] ][nod]);//gasesc bottleneck-ul
-			if (fmin == 0) continue;
+            fmin = INF;
+            for (nod = n-1; nod != 0; nod = tati[nod])
+                fmin = min(fmin, capacities[ tati[nod] ][nod] - flows[ tati[nod] ][nod]);//gasesc bottleneck-ul
+            if (fmin == 0) continue;
 
-			for (nod = n-1; nod != 0; nod = tati[nod])
-			{
-				flows[ tati[nod] ][nod] += fmin;
-				flows[nod][ tati[nod] ] -= fmin;
-			}//updatez cantitatile trimise pe drumul gasit
+            for (nod = n-1; nod != 0; nod = tati[nod])
+            {
+                flows[ tati[nod] ][nod] += fmin;
+                flows[nod][ tati[nod] ] -= fmin;
+            }//updatez cantitatile trimise pe drumul gasit
 
-			flow += fmin;
-		}
+            flow += fmin;
+        }
 
     return flow;
 }
 
 bool graph::has_euler_cycle()
 {
-    for(int i=0;i<n;i++)
+    for(int i=0; i<n; i++)
         if((int)arcs[i].size()%2==1)
             return false;
     return true;
@@ -562,8 +575,8 @@ vector<int> graph::euler_cycle()
     vector< vector<int> > node_edges(n);
     vector<pair<int,int> > edges;
     int k=0;
-    for(int i=0;i<n;i++)
-        for(int j=0;j<(int)arcs[i].size();j++)
+    for(int i=0; i<n; i++)
+        for(int j=0; j<(int)arcs[i].size(); j++)
         {
             edges.push_back(make_pair(i,arcs[i][j]));
             node_edges[i].push_back(k);
@@ -585,9 +598,10 @@ vector<int> graph::euler_cycle()
                 st.push(edges[e].first ^ edges[e].second ^ nod);
             }
         }
-        else{
-        st.pop();
-        cycle.push_back(nod);
+        else
+        {
+            st.pop();
+            cycle.push_back(nod);
         }
     }
 
@@ -602,10 +616,11 @@ void bfs_main()
     s--;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>a>>b;
-        a--;b--;
+        a--;
+        b--;
         arce[a].push_back(b);
     }
     graph g(n,m,arce);
@@ -614,33 +629,36 @@ void bfs_main()
 }
 void dfs_main()
 {
-        int n,m;
+    int n,m;
     ifstream fin("dfs.in");
     fin>>n>>m;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>a>>b;
-        a--;b--;
+        a--;
+        b--;
         arce[a].push_back(b);
         arce[b].push_back(a);
     }
     graph g(n,m,arce);
-    g.componente_conexe();
+    ofstream fout("dfs.out");
+    fout<<g.componente_conexe();
 
 }
 void sort_top_main()
 {
-        int m,n;
-        ifstream fin("sortaret.in");
+    int m,n;
+    ifstream fin("sortaret.in");
     fin>>n>>m;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>a>>b;
-        a--;b--;
+        a--;
+        b--;
         arce[a].push_back(b);
         arce[b].push_back(a);
     }
@@ -654,10 +672,11 @@ void ctc_main()
     fin>>n>>m;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>a>>b;
-        a--;b--;
+        a--;
+        b--;
         arce[a].push_back(b);
     }
     graph g(n,m,arce);
@@ -671,7 +690,7 @@ void arce_critice_main()
     fin>>n>>m;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>a>>b;
         //a--;b--;
@@ -688,8 +707,11 @@ void havel_hakimi_main()
     ifstream fin("HavHak.in");
     fin>>n;
     int l;
-    for(int i=0;i<n;i++)
-        {fin>>l;s.push_back(l);}
+    for(int i=0; i<n; i++)
+    {
+        fin>>l;
+        s.push_back(l);
+    }
     graph g;
     g=g.Havel_Hakimi(s);
     g.print();
@@ -704,8 +726,8 @@ void disj_main()
     fin>>n>>m;
     vector<int> tati(n),rang(n);
     rang.assign(n,1);
-    for(int i=0;i<n;i++)tati[i]=i;
-    for(int i=0;i<m;i++)g.disjoint_command(fin,fout,tati,rang);
+    for(int i=0; i<n; i++)tati[i]=i;
+    for(int i=0; i<m; i++)g.disjoint_command(fin,fout,tati,rang);
 }
 void bellmanford_main()
 {
@@ -716,7 +738,7 @@ void bellmanford_main()
     vector<vector<pair<int,int> > > cost_arcs(n);
     vector< vector<int>> arcs(n);
     int x,y,c;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>x>>y>>c;
         x--;
@@ -727,20 +749,20 @@ void bellmanford_main()
     graph g(n,m,arcs,cost_arcs);
     vector<int> out=g.bellman_ford();
     if(g.get_negative_cycle())fout<<"Ciclu negativ!\n";
-    else for(int i=1;i<n;i++)
-        fout<<out[i]<<' ';
+    else for(int i=1; i<n; i++)
+            fout<<out[i]<<' ';
     fout.close();
 }
 void dijkstra_main()
 {
-        int n,m;
+    int n,m;
     ifstream fin("dijkstra.in");
     ofstream fout("dijkstra.out");
     fin>>n>>m;
     vector<vector<pair<int,int> > > cost_arcs(n);
     vector< vector<int>> arcs(n);
     int x,y,c;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>x>>y>>c;
         x--;
@@ -750,7 +772,7 @@ void dijkstra_main()
     }
     graph g(n,m,arcs,cost_arcs);
     vector<int> out=g.dijkstra();
-    for(int i=1;i<n;i++)
+    for(int i=1; i<n; i++)
         fout<<out[i]<<' ';
     fout.close();
 
@@ -764,7 +786,7 @@ void apm_main()
     vector<vector<pair<int,int> > > cost_arcs(n);
     vector< vector<int>> arcs(n);
     int x,y,c;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>x>>y>>c;
         x--;
@@ -775,8 +797,8 @@ void apm_main()
     graph g(n,m,arcs,cost_arcs);
     vector<vector<int>> out =g.apm();
     fout<<g.get_apm_cost()<<'\n'<<g.get_apm_size()<<'\n';
-    for(int i=0;i<(int)out.size();i++)
-        for(auto it=out[i].begin();it!=out[i].end();it++)
+    for(int i=0; i<(int)out.size(); i++)
+        for(auto it=out[i].begin(); it!=out[i].end(); it++)
             fout<<i+1<<' '<<(*it)+1<< '\n';
     fout.close();
 
@@ -786,13 +808,13 @@ void roy_floyd_main()
     int n;
     ifstream fin("royfloyd.in");
     fin>>n;
-        vector<vector<pair<int,int> > > cost_arcs(n);
+    vector<vector<pair<int,int> > > cost_arcs(n);
     vector<vector<int> > arcs(n);
 
     int c;
-    for(int x=0;x<n;x++)
+    for(int x=0; x<n; x++)
     {
-        for(int y=0;y<n;y++)
+        for(int y=0; y<n; y++)
         {
             fin>>c;
             arcs[x].push_back(y);
@@ -813,10 +835,11 @@ void darb_main()
     fin>>n;
     vector<vector<int>> arce(n);
     int a,b;
-    for(int i=0;i<n-1;i++)
+    for(int i=0; i<n-1; i++)
     {
         fin>>a>>b;
-        a--;b--;
+        a--;
+        b--;
         arce[a].push_back(b);
         arce[b].push_back(a);
     }
@@ -832,7 +855,7 @@ void maxflow_main()
     vector<vector<pair<int,int> > > cost_arcs(n);
     vector< vector<int>> arcs(n);
     int x,y,c;
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>x>>y>>c;
         x--;
@@ -853,7 +876,7 @@ void euler_main()
     int n, m, x, y;
     fin >> n >> m;
     vector<vector<int>> arcs(n);
-    for(int i=0;i<m;i++)
+    for(int i=0; i<m; i++)
     {
         fin>>x>>y;
         x--;
@@ -866,7 +889,7 @@ void euler_main()
     else
     {
         vector<int> out = g.euler_cycle();
-        for(auto it=out.begin();it!=out.end()-1;it++)
+        for(auto it=out.begin(); it!=out.end()-1; it++)
             fout<<*it+1<<' ';
     }
     fin.close();
