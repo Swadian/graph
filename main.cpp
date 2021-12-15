@@ -19,7 +19,7 @@ class graph
 
     void sort_dfs(int start,vector<bool> &viz,queue<int> &coada);
     void tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
-    void critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
+    void critical_arcs_dfs(int n,vector<int> &out,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
     int root(int x,vector<int> &tati,vector<int> &rang);
     void unite(int x,int y,vector<int> &tati,vector<int> &rang);
     int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
@@ -33,15 +33,15 @@ public:
     int get_apm_size(){return this->apm_size;}
     bool get_negative_cycle(){return this->negative_cycle;}
 
-    void print();
+    void print(string filename);//afiseaza muchiile grafului
 
-    void bfs(int start);
+    vector<int> bfs(int start);//returneaza distantele (in nr de muchii) de la start la toate nodurile
     void dfs(int start,vector<bool> &viz);//transforma vectorul dat intr-un vector de vizitari cu DFS din nodul start
     int componente_conexe();//returneaza numarul de componente conexe
-    void sortare_top();
+    vector<int> sortare_top();//returneaza o sortare topologica a grafului
     graph Havel_Hakimi(vector<int> s);//returneaza un graf generat din vectorul de grade s
     void comp_tare_conexe();
-    void critical_arcs();
+    vector<int> critical_arcs();//returneaza un vector cu muchiile critice
 
     void disjoint_command(ifstream &fin,ofstream &fout,vector<int> &tati,vector<int> &rang);
     vector<int> bellman_ford();//actualizeaza verificarea daca are sau nu ciclu negativ si returneaza distantele de la nodul 0 la toate nodurile
@@ -56,9 +56,9 @@ public:
     vector<int> euler_cycle();//returneaza un ciclu eulerian din graf
     //doesn't work on IA
 };
-void graph::print()
+void graph::print(string filename)
 {
-    ofstream fout("graph.out");
+    ofstream fout(filename);
     vector <int>::const_iterator it;
     for(int i=0; i<n; i++)
     {
@@ -80,12 +80,11 @@ graph::graph(int n,int m,vector< vector<int>> arcs,vector<vector<pair<int,int> >
     this->arcs=arcs;
 }
 
-void graph::bfs(int start)
+vector<int> graph::bfs(int start)
 {
     queue<int> que;
     que.push(start);
-    int *dist=new int[this->n];
-    for(int i=0; i<n; i++)dist[i]=-1; //initializez distantele cu -1
+    vector<int> dist(n,-1);
     dist[start]=0;//distanta startului e 0
     while(!que.empty())//cat timp mai am in coada
     {
@@ -100,10 +99,7 @@ void graph::bfs(int start)
             }
         }
     }
-    ofstream fout("bfs.out");
-    for(int i=0; i<this->n; i++)
-        fout<<dist[i]<<' ';//afisez distantele
-    delete[] dist;//sterg vectorul dinamic
+        return dist;
 }
 void graph::dfs(int start,vector<bool> &viz)
 {
@@ -144,8 +140,9 @@ void graph::sort_dfs(int start, vector<bool> &viz,queue<int> &coada)
     }
     coada.push(start);
 }
-void graph::sortare_top()
+vector<int> graph::sortare_top()
 {
+    vector<int> out(n);
     queue<int> coada;
     vector<bool> viz(n);
     for(int i=0; i<n; i++)viz[i]=false; //initializez cu fals vectorul
@@ -153,10 +150,10 @@ void graph::sortare_top()
     ofstream fout("sortaret.out");
     while(!coada.empty())
     {
-        fout<<coada.back()+1<<' ';
+        out.push_back(coada.back()+1);
         coada.pop();
     }
-
+    return out;
 }
 graph graph::Havel_Hakimi(vector<int> s)
 {
@@ -189,14 +186,11 @@ graph graph::Havel_Hakimi(vector<int> s)
 }
 void graph::comp_tare_conexe()
 {
-    vector<int> idx,lowlink;//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
-    vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
+    vector<int> idx(n,-1),lowlink(n);//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
+    vector<bool> in_stack(n,0);//daca nodul se afla in stiva pt Tarjan recursiv
     stack <int> S;//stiva pt Tarjan
     int index=0;
     vector< vector<int> > C;//ctc-urile
-    lowlink.resize(n);//initializam marimea lui lowlink
-    idx.assign(n, -1);
-    in_stack.assign(n, 0);
     //initializam idx si in_stack cu valorile de inceput
     for (int i = 0; i < n; ++ i)
         if (idx[i] == -1)
@@ -248,7 +242,7 @@ void graph::tarjan(int n,vector< vector<int> > &C,vector<bool> &in_stack,stack <
     }
 
 }
-void graph::critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index)
+void graph::critical_arcs_dfs(int n,vector<int> &out,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index)
 {
     idx[n] = lowlink[n] = index;
     //setez indexul nodului, initializez lowlink-ul cu propria valoare
@@ -262,31 +256,27 @@ void graph::critical_arcs_dfs(int n,ostream &fout,vector<bool> &in_stack,stack <
     {
         if (idx[*it] == -1)//daca nu a mai fost vizitat
         {
-            critical_arcs_dfs(*it,fout,in_stack,S,idx,lowlink,index);//apelez recursiv
+            critical_arcs_dfs(*it,out,in_stack,S,idx,lowlink,index);//apelez recursiv
             lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca apelul recursiv a generat unul mai mic
         }
         else if (in_stack[*it])//daca e deja in stiva
             lowlink[n] = min(lowlink[n], lowlink[*it]);//updatez minimul daca este cazul
 
-        if(lowlink[*it]>idx[n]) fout<<n<<' '<<*it;
+        if(lowlink[*it]>idx[n]) {out.push_back(n);out.push_back(*it);}
     }
 
 }
-void graph::critical_arcs()
+vector<int> graph::critical_arcs()
 {
-    vector<int> idx,lowlink;//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
-    vector<bool> in_stack;//daca nodul se afla in stiva pt Tarjan recursiv
+    vector<int> out;
+    vector<int> idx(n,-1),lowlink(n);//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
+    vector<bool> in_stack(n,0);//daca nodul se afla in stiva pt Tarjan recursiv
     stack <int> S;//stiva pt Tarjan
     int index=0;
-    ofstream fout("crit_conn.out");
-    lowlink.resize(n);//initializam marimea lui lowlink
-    idx.assign(n, -1);
-    in_stack.assign(n, 0);
-    //initializam idx si in_stack cu valorile de inceput
     for (int i = 0; i < n; ++ i)
         if (idx[i] == -1)
-            critical_arcs_dfs(i,fout,in_stack,S,idx,lowlink,index);//apelam pentru fiecare nod nevizitat
-    fout.close();
+            critical_arcs_dfs(i,out,in_stack,S,idx,lowlink,index);//apelam pentru fiecare nod nevizitat
+    return out;
 }
 
 int graph::root(int x,vector<int> &tati, vector<int> &rang)
@@ -528,10 +518,7 @@ int graph::flow_BF(vector<int> &tati,vector<int> &cd,vector<int> &viz,vector< ve
 int graph::max_flow()
 {
     const int INF = 0x3f3f3f3f;
-    vector<int> cd,viz,tati;
-    cd.assign(n,0);
-    viz.assign(n,0);
-    tati.assign(n,0);
+    vector<int> cd(n,0),viz(n,0),tati(n,0);
     vector< vector<int> > capacities(n),flows(n);
     for(auto it=capacities.begin(); it!=capacities.end(); it++)
         (*it).assign(n,0);
@@ -614,7 +601,7 @@ vector<int> graph::euler_cycle()
 
     return cycle;
 }
-
+/*
 void bfs_main()
 {
     int n,m,s;
@@ -706,7 +693,9 @@ void arce_critice_main()
     graph g(n,m,arce);
     g.critical_arcs();
 
-}
+}*/
+//WIP to fix
+
 void havel_hakimi_main()
 {
     int n;
@@ -721,7 +710,7 @@ void havel_hakimi_main()
     }
     graph g;
     g=g.Havel_Hakimi(s);
-    g.print();
+    g.print("graph.out");
 
 }
 void disj_main()
