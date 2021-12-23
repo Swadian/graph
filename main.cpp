@@ -6,8 +6,6 @@
 #include <set>
 using namespace std;
 
-
-
 class graph
 {
     int n,m;
@@ -22,7 +20,7 @@ class graph
     void critical_arcs_dfs(int n,vector<int> &out,vector<bool> &in_stack,stack <int> &S,vector<int> &idx,vector<int> &lowlink,int &index);
     int root(int x,vector<int> &tati,vector<int> &rang);
     void unite(int x,int y,vector<int> &tati,vector<int> &rang);
-    int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
+  //  int flow_BF(vector<int> &tati,vector<int> &viz,vector<int> &cd,vector< vector<int> > &capacities,vector< vector<int> > &flows);
 
 public:
     graph(){this->n=0;this->m=0;}
@@ -40,7 +38,8 @@ public:
     int componente_conexe();//returneaza numarul de componente conexe
     vector<int> sortare_top();//returneaza o sortare topologica a grafului
     graph Havel_Hakimi(vector<int> s);//returneaza un graf generat din vectorul de grade s
-    void comp_tare_conexe();
+    //sau un graf vid daca nu se poate
+    void comp_tare_conexe(string filename);//afiseaza componentele tare conexe si numarul lor in fisierul dat
     vector<int> critical_arcs();//returneaza un vector cu muchiile critice
 
     void disjoint_command(ifstream &fin,ofstream &fout,vector<int> &tati,vector<int> &rang);
@@ -50,10 +49,10 @@ public:
     void print_distance_matrix(string filename);//afiseaza matricea distantelor dintre toate nodurile in fisierul dat
     void roy_floyd();//optimizeaza toate costurile dintre noduri
     int d_arb();//returneaza diametrul arborelui (distanta cea mai mare intre doua frunze)
-    int max_flow();//returneaza fluxul maxim din graf de la nodul 0 la n-1
+ //   int max_flow();//returneaza fluxul maxim din graf de la nodul 0 la n-1
     //doesn't work on IA
-    bool has_euler_cycle();//returneaza daca graful are un ciclu eulerian
-    vector<int> euler_cycle();//returneaza un ciclu eulerian din graf
+ //   bool has_euler_cycle();//returneaza daca graful are un ciclu eulerian
+  //  vector<int> euler_cycle();//returneaza un ciclu eulerian din graf
     //doesn't work on IA
 };
 void graph::print(string filename)
@@ -160,9 +159,11 @@ graph graph::Havel_Hakimi(vector<int> s)
     int n,m;
     m=0;
     n=s.size();
-    vector<vector<int>> arcs;
-    arcs.resize(n);
+    vector<vector<int>> arcs(n);
     vector<pair<int,int>> v;
+    int sum=0;
+    for(auto it=s.begin();it!=s.end();it++) sum+=*it;
+    if(sum%2) return graph();
     for(int i=0; i<n; i++)
         v.push_back(make_pair(i,s[i]));//first - indicele second - gradul
     sort(v.begin(),v.end(),[](pair<int,int> v1,pair<int,int> v2)->bool{return v1.second>v2.second;});//sortez dupa grade, in ordine inversa
@@ -173,6 +174,7 @@ graph graph::Havel_Hakimi(vector<int> s)
         {
             for(int i=1; i<=v[0].second; i++) //de la urmatorul, pana epuizam gradul nodului de pe pozitia 0
             {
+                if(v[i].second<1)return graph();
                 m++;
                 arcs[v[0].first].push_back(v[i].first);//pun arc intre noduri
                 v[i].second--;//scad gradul si nodului pus
@@ -184,7 +186,7 @@ graph graph::Havel_Hakimi(vector<int> s)
     }
     return graph(n,m,arcs);
 }
-void graph::comp_tare_conexe()
+void graph::comp_tare_conexe(string filename)
 {
     vector<int> idx(n,-1),lowlink(n);//indecsii nodurilor si indexul minim ce poate fi atins dintr-un dfs Tarjan
     vector<bool> in_stack(n,0);//daca nodul se afla in stiva pt Tarjan recursiv
@@ -196,7 +198,7 @@ void graph::comp_tare_conexe()
         if (idx[i] == -1)
             tarjan(i,C,in_stack,S,idx,lowlink,index);//apelam pentru fiecare nod nevizitat
 
-    ofstream fout("ctc.out");
+    ofstream fout(filename);
     fout<<(int)C.size()<<'\n';//numarul de linii din C este numarul de ctc
     for(int i=0; i<(int)C.size(); i++)
     {
@@ -414,8 +416,7 @@ vector< vector<int> > graph::apm()
 {
     this->apm_cost=0;
     this->apm_size=0;
-    vector<int> tati(n),rang(n);
-    rang.assign(n,1);
+    vector<int> tati(n),rang(n,1);
     for(int i=0; i<n; i++)tati[i]=i;
     vector<vector<int> > apm(n);
 
@@ -492,7 +493,7 @@ int graph::d_arb()
     return max_chain_length+1;
 
 }
-
+/*
 int graph::flow_BF(vector<int> &tati,vector<int> &cd,vector<int> &viz,vector< vector<int> > &capacities,vector< vector<int> > &flows)
 {
     int nod,V;
@@ -601,7 +602,7 @@ vector<int> graph::euler_cycle()
 
     return cycle;
 }
-/*
+*/
 void bfs_main()
 {
     int n,m,s;
@@ -618,7 +619,10 @@ void bfs_main()
         arce[a].push_back(b);
     }
     graph g(n,m,arce);
-    g.bfs(s);
+    vector<int> out = g.bfs(s);
+    ofstream fout("bfs.out");
+    for(auto it = out.begin();it!=out.end();it++)
+        fout<<*it<<' ';
 
 }
 void dfs_main()
@@ -674,7 +678,7 @@ void ctc_main()
         arce[a].push_back(b);
     }
     graph g(n,m,arce);
-    g.comp_tare_conexe();
+    g.comp_tare_conexe("ctc.out");
 
 }
 void arce_critice_main()
@@ -693,8 +697,7 @@ void arce_critice_main()
     graph g(n,m,arce);
     g.critical_arcs();
 
-}*/
-//WIP to fix
+}
 
 void havel_hakimi_main()
 {
@@ -842,6 +845,7 @@ void darb_main()
     graph g(n,n-1,arce);
     fout<<g.d_arb();
 }
+/*
 void maxflow_main()
 {
     int n,m;
@@ -890,9 +894,9 @@ void euler_main()
     }
     fin.close();
     fout.close();
-}
+}*/
 int main()
 {
-    euler_main();
+
     return 0;
 }
